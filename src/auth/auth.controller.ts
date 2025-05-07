@@ -1,4 +1,4 @@
-import { Body, Controller,Patch, Post, UseGuards, Request, Get, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Body, Controller,Patch, Post, UseGuards, Request, Get, BadRequestException, InternalServerErrorException, Param, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SupabaseService } from '../supabase/supabase.service';  // Import SupabaseService
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -15,6 +15,31 @@ export class AuthController {
 
 
 
+  @Get('wasActive')
+  @UseGuards(JwtAuthGuard)
+  getActive(@Request() req) {
+    return this.authService.wasUserActiveToday(req.user.sub); // The logged-in user's data
+  }
+
+  @Get('lastTimeActive')
+  @UseGuards(JwtAuthGuard)
+  getlastTimeActive(@Request() req) {
+    return this.authService.getTimeSinceLastLogin(req.user.sub); // The logged-in user's data
+  }
+
+  @Get('stats')
+  async getstats() {
+    return this.authService.getUserStats();
+  }
+
+  @Get('statsPackage')
+  async getstatsPackage() {
+    return this.authService.getUsersByPackageType();
+  }
+  @Get('search')
+  async searchByName(@Query('name') name: string) {
+    return this.authService.getProfileByName(name);
+  }
   @Post('register')
   async register(@Body() body: { email: string; password: string; fullname: string }) {
     return this.authService.register(body);
@@ -27,19 +52,37 @@ export class AuthController {
   }
   
 
-  @Post('profile')
+  @Get('me')
   @UseGuards(JwtAuthGuard)
   getProfile(@Request() req) {
     return req.user; // The logged-in user's data
   }
 
-  @Get('profile')
+  @Get(':id')
+  async getUserById(@Param('id') userId: string) {
+    return this.authService.getprofile(userId);
+  }
+ 
+  @Get()
   @UseGuards(JwtAuthGuard)
-  async getprofile(@Request() req) {
-    return this.authService.getprofile(req.user.sub); // Extract user ID from JWT payload
+  async getUsers(@Request() req: Request & { user: { id: string } }) {
+    const currentUserId = req.user.id; 
+    return this.authService.getUsers(currentUserId);
   }
 
-  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @Get('users')
+  async getAllUsers(@Request() req) {
+    return this.authService.getAllUsers(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('typeproject')
+  async getProjctType(@Request() req) {
+    return this.authService.getTypeBusinessByUser(req.user.sub);
+  }
+
+  @Patch('update')
   @UseGuards(JwtAuthGuard)
   async updateProfile(@Request() req, @Body() body: UpdateProfileDto) {
    return this.authService.updateProfile(req.user.sub, body);
@@ -50,4 +93,6 @@ export class AuthController {
    async updatePassword(@Request() req, @Body() body: UpdatePasswordDto) {
     return this.authService.updatePassword(req.user.sub, body);
    }
+
+   
 }

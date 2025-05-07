@@ -2,16 +2,14 @@ import { Module } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { ProjectController } from './project.controller';
 import { PrismaService } from '../prisma/prisma.service';
-import { JwtModule } from '@nestjs/jwt';
+import { AuthModule } from 'src/auth/auth.module';
+import { AIService } from 'src/ai/ai.service';
+import { AchivementService } from 'src/achivement/achivement.service';
 
 @Module({
-  imports: [
-    JwtModule.register({
-      secret: 'your_secret_key', // Use a secure secret
-      signOptions: { expiresIn: '1h' },
-    }),
-  ],
+  imports: [AuthModule], 
   controllers: [ProjectController],
-  providers: [ProjectService, PrismaService],
+ 
+  providers: [ProjectService, PrismaService,AchivementService],
 })
 export class ProjectModule {}

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "AiPlanTask" ALTER COLUMN "dayNumber" DROP NOT NULL,
+ALTER COLUMN "dayNumber" SET DATA TYPE TEXT;

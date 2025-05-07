@@ -1,26 +1,23 @@
-import { IsOptional, IsString, IsEnum, IsDateString, isInt, IsNumber, IsNotEmpty } from 'class-validator';
+import { TaskPriority, TaskType } from '@prisma/client';
+import { InputJsonValue } from '@prisma/client/runtime/library';
 
 export class CreateTaskDto {
-  @IsString()
   name: string;
-
-  @IsOptional()
-  @IsString()
+  milestoneId: string; // Now required
   description?: string;
-
-  @IsEnum({ pending: 'pending', 'in-progress': 'in-progress', completed: 'completed' })
-  status: string;
-
-  @IsNotEmpty()
-  @IsString()
-  projectId: string;
-
-  @IsOptional()
-  @IsNumber()
-  estimatedHours?: number;
-
-
-  @IsOptional()
-  @IsDateString()
+  status?: string;  // Changed from string to string array
+  priority?: string;
+  type?:string;
   dueDate?: Date;
+  startDate?: Date;
+  estimatedTime?: number;
+  teamId?: string;
+  dependencyStatus?: string;
+  aiSuggestions?: InputJsonValue;
+  aiPriorityAdjustment?: string;
+  aiTaskOptimization?: InputJsonValue;
+  assignedToId?: string;  // ID of the user assigned to this task
+  assignedById?: string;  // ID of the user who assigned the task
+  bestAction?:string;
+  timeAllocation?:string;
 }

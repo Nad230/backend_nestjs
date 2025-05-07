@@ -1,5 +1,3 @@
-// This is your Prisma schema file
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,40 +8,1789 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  id_users      String    @unique @map("id_users") // Reference to Supabase auth table
-  phone         String?   @unique
-  role          String    @default("user")
-  fullname      String
-  created_at    DateTime  @default(now())
-  email         String    @unique
-  password      String
-  profile_photo String?
-  projects      Project[] @relation("UserProjects") // Define the relation name here
-  tasks         Task[]    @relation("UserTasks") // Add relation to Task model
+  id                String            @id @default(cuid())
+  id_users          String            @unique @map("id_users")
+  fullname          String            @unique
+  phone             Int?
+  language          String?
+  projectName       String?
+  projectType       String?
+  location          String?
+  startHour         Int?
+  endHour           Int?
+  BudgetRange       Int?
+  lastLogin         DateTime?
+  bio               String?
+  profileVisibility ProfileVisibility @default(PUBLIC)
+  website           String?
+
+  created_at            DateTime                @default(now())
+  email                 String                  @unique
+  password              String
+  profile_photo         String?
+  packageType           PackageType             @default(SILVER)
+  role                  String?                 @default("USER")
+  emailVerified         Boolean                 @default(false)
+  firstTime             Boolean?                @default(false)
+  AcadTask              AcadTask[]
+  AcademicProject       AcademicProject[]
+  assignedTasks         AcademicTask[]          @relation("AssignedTasks")
+  assigneeTasks         AcademicTask[]          @relation("AssigneeTasks")
+  AchievementProgress   AchievementProgress[]
+  AssignedUser          AssignedUser[]
+  Citation              Citation[]
+  Course                Course[]
+  CourseMember          CourseMember[]
+  Expense               Expense[]
+  File                  File[]
+  MilestonesCreated     Milestone[]             @relation("AssignedByUser")
+  Presentation          Presentation[]
+  Product               Product[]
+  profiles              Profile[]
+  Room                  Room[]
+  RoomMember            RoomMember[]
+  Sale                  Sale[]
+  ScheduledPost         ScheduledPost[]
+  TaskComment           TaskComment[]
+  TaskSubmission        TaskSubmission[]
+  Team                  Team[]
+  ChallengeParticipant  ChallengeParticipant[]
+  Challenge             Challenge[]
+  DigitalAsset          DigitalAsset[]
+  Formateur             Formateur[]
+  Freelancer            Freelancer[]
+  groupMemberships      GroupMembership[]       @relation("UserGroupMemberships")
+  groups                Group[]                 @relation("UserGroups")
+  nfts                  NFT[]                   @relation("NFT")
+  projects              Project[]               @relation("UserProjects")
+  Review                Review[]
+  TaskAssignedBy        Task[]                  @relation("AssignedByUser")
+  team_members          TeamMember[]            @relation("TeamMembers")
+  timeEntries           TimeEntry[]             @relation("UserTimeEntries")
+  Token                 Token[]
+  Transaction           Transaction[]
+  achievements          Achievement[]           @relation("UserAchievements")
+  DailyProfit           DailyProfit[]
+  UserLocation          UserLocation?
+  Place                 Place[]
+  BusinessPlan          BusinessPlan[]
+  AiJob                 AiJob[]
+  BusinessSuggestion    BusinessSuggestion[]
+  AiPlan                AiPlan[]
+  StartupPlan           StartupPlan[]
+  LocalBusiness         LocalBusiness[]
+  LocalUserBusinessplan LocalUserBusinessplan[]
+  clientsLinked         Client[]                @relation("ClientUser") // for `user` field in Client
+  clientsCreated        Client[]                @relation("ClientCreator") // for `creator` field in Client
+  Invoice               Invoice[]               @relation("ClientCreator") // 👈 Relation name matches Invoice model
+  Profit                Profit[]
+  habits                Habit[]                 @relation("UserHabits")
+  goals                 Goal[]                  @relation("UserGoals")
+  posts                 Post[]                  @relation("UserPosts")
+  comments              PostComment[]           @relation("UserComments")
+  reactions             PostReaction[]          @relation("UserReactions")
+  chats                 UserChat[]              @relation("UserChats")
+  admin                 Chat[]                  @relation("ChatAdmin")
+  messages              Message[]               @relation("UserMessages")
+  notifications         Notification[]          @relation("UserNotifications")
+  followedBy            UserFollower[]          @relation("follower")
+  following             UserFollower[]          @relation("following")
+  readReceipts          ReadReceipt[]           @relation("Reader")
+  delete                MessageDelete[]         @relation("UserDelete")
+  callParticipations    CallParticipant[]       @relation("UserCalls")
+
+  @@map("users")
 }
 
-model Project {
-  id          String  @id @default(uuid())
+enum ProfileVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model UserFollower {
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("following", fields: [followingId], references: [id])
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@map("user_followers")
+}
+
+model Habit {
+  id            String            @id @default(uuid())
+  userId        String
+  goalId        String?
+  name          String
+  type          HabitType
+  description   String?
+  weeklyTarget  Int               @default(0)
+  status        HabitStatus       @default(NotStarted)
+  streak        Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  user          User              @relation("UserHabits", fields: [userId], references: [id_users])
+  goal          Goal?             @relation("GoalHabits", fields: [goalId], references: [id])
+  completions   HabitCompletion[]
+  badges        Badge[]           @relation("HabitBadges")
+  notifications Notification[]    @relation("NotificationHabit")
+
+  @@map("habits")
+}
+
+model Goal {
+  id          String     @id @default(uuid())
+  userId      String
+  title       String
+  description String?
+  deadline    DateTime?
+  status      GoalStatus @default(InProgress)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  user        User       @relation("UserGoals", fields: [userId], references: [id_users])
+  habits      Habit[]    @relation("GoalHabits")
+
+  @@map("goals")
+}
+
+enum GoalStatus {
+  NotStarted
+  InProgress
+  Paused
+  Completed
+}
+
+model Badge {
+  id          String    @id @default(uuid())
+  habitId     String
+  type        BadgeType
+  name        String
+  description String
+  earnedAt    DateTime  @default(now())
+  habit       Habit     @relation("HabitBadges", fields: [habitId], references: [id])
+
+  @@map("badges")
+}
+
+enum BadgeType {
+  Streak
+  Consistency
+  Achievement
+  Milestone
+}
+
+model HabitCompletion {
+  id        String   @id @default(uuid())
+  habitId   String
+  date      DateTime @default(now())
+  completed Boolean  @default(true)
+  notes     String?
+  habit     Habit    @relation(fields: [habitId], references: [id])
+
+  @@map("habit_completions")
+}
+
+enum HabitType {
+  GoodHabit
+  BadHabit
+}
+
+enum HabitStatus {
+  NotStarted
+  InProgress
+  Paused
+  Completed
+}
+
+model Post {
+  id            String         @id @default(uuid())
+  content       String
+  mediaType     MediaType?
+  privacy       Privacy        @default(Public)
+  authorId      String
+  shareCount    Int            @default(0)
+  isEdited      Boolean?       @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation("UserPosts", fields: [authorId], references: [id])
+  reactions     PostReaction[] @relation("PostReactions")
+  comments      PostComment[]  @relation("PostComments")
+  media         PostMedia[]    @relation("PostsMedia")
+  notifications Notification[] @relation("NotificationPost")
+}
+
+model PostMedia {
+  id       String    @id @default(uuid())
+  type     MediaType
+  url      String
+  fileName String?
+  fileSize Float?
+  width    Int?
+  height   Int?
+  duration Float?
+  postId   String
+  post     Post      @relation("PostsMedia", fields: [postId], references: [id])
+
+  @@map("post_media")
+}
+
+enum MediaType {
+  Audio
+  Video
+  Image
+}
+
+model PostReaction {
+  id        String       @id @default(uuid())
+  type      ReactionType
+  userId    String
+  postId    String?
+  commentId String?
+  messageId String?
+
+  post    Post?        @relation("PostReactions", fields: [postId], references: [id])
+  user    User         @relation("UserReactions", fields: [userId], references: [id])
+  message Message?     @relation("MessageReactions", fields: [messageId], references: [id])
+  comment PostComment? @relation("CommentReactions", fields: [commentId], references: [id])
+
+  @@unique([userId, postId], name: "user_post_unique")
+  @@unique([userId, commentId], name: "user_comment_unique")
+  @@unique([userId, messageId], name: "user_message_unique")
+  @@map("post_reactions")
+}
+
+enum ReactionType {
+  Like
+  Love
+  Haha
+  Wow
+  Sad
+  Angry
+}
+
+model PostComment {
+  id            String         @id @default(uuid())
+  content       String
+  authorId      String
+  author        User           @relation("UserComments", fields: [authorId], references: [id])
+  postId        String
+  parent        PostComment?   @relation("Reply", fields: [parentId], references: [id])
+  parentId      String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  post          Post           @relation("PostComments", fields: [postId], references: [id])
+  reactions     PostReaction[] @relation("CommentReactions")
+  replies       PostComment[]  @relation("Reply")
+  notifications Notification[] @relation("NotificationComment")
+
+  @@map("post_comments")
+}
+
+enum Privacy {
+  Public
+  Private
+  Restricted
+}
+
+model Chat {
+  id        String     @id @default(uuid())
+  name      String? // Nom optionnel pour les groupes
+  isGroup   Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  messages  Message[]  @relation("ChatMessages")
+  users     UserChat[] @relation("ChatUsers")
+  admin     User?      @relation("ChatAdmin", fields: [adminId], references: [id])
+  adminId   String?
+
+  @@map("chats")
+}
+
+//table de jointure 
+model UserChat {
+  userId   String
+  chatId   String
+  user     User     @relation("UserChats", fields: [userId], references: [id])
+  chat     Chat     @relation("ChatUsers", fields: [chatId], references: [id])
+  joinedAt DateTime @default(now())
+
+  @@id([userId, chatId])
+  @@map("user_chats")
+}
+
+model Message {
+  id                 String           @id @default(uuid())
+  content            String?
+  type               MessageType
+  status             MessageStatus    @default(SENT)
+  category           MessageCategory?
+  senderId           String
+  chatId             String
+  parentId           String?
+  deletedForEveryone Boolean          @default(false)
+  deletions          MessageDelete[]  @relation("MessageDelete")
+  call               Call[]           @relation("MessageCall")
+  sender             User             @relation("UserMessages", fields: [senderId], references: [id])
+  chat               Chat             @relation("ChatMessages", fields: [chatId], references: [id])
+  reactions          PostReaction[]   @relation("MessageReactions")
+  attachment         Attachment[]     @relation("MessageAttachment")
+  readReceipts       ReadReceipt[]    @relation("MessageRead")
+  replies            Message[]        @relation("MessageReplies")
+  parent             Message?         @relation("MessageReplies", fields: [parentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("messages")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+  LINK
+  CALL
+}
+
+enum MessageStatus {
+  SENDING
+  DELIVERED
+  SENT
+  SEEN
+  FAILED
+  EDITED
+}
+
+enum MessageCategory {
+  NORMAL
+  SPAM
+}
+
+model ReadReceipt {
+  id        String    @id @default(uuid())
+  message   Message   @relation("MessageRead", fields: [messageId], references: [id])
+  messageId String
+  user      User      @relation("Reader", fields: [userId], references: [id])
+  userId    String
+  readAt    DateTime? @default(now())
+
+  @@unique([userId, messageId], name: "userId_messageId")
+  @@map("read_receipts")
+}
+
+model Attachment {
+  id        String         @id @default(uuid())
+  url       String
+  type      AttachmentType
+  fileName  String?
+  fileSize  Float?
+  width     Int?
+  height    Int?
+  duration  Float?
+  message   Message        @relation("MessageAttachment", fields: [messageId], references: [id])
+  messageId String
+
+  @@map("attachments")
+}
+
+model MessageDelete {
+  id        String   @id @default(uuid())
+  user      User     @relation("UserDelete", fields: [userId], references: [id])
+  userId    String
+  message   Message  @relation("MessageDelete", fields: [messageId], references: [id])
+  messageId String
+  deletedAt DateTime @default(now())
+
+  @@unique([userId, messageId])
+  @@map("message_deletes")
+}
+
+enum AttachmentType {
+  Image
+  Video
+  Audio
+  Document
+}
+
+enum CallStatus {
+  ONGOING
+  COMPLETED
+  MISSED
+  DECLINED
+  FAILED
+}
+
+model Call {
+  id           String            @id @default(uuid())
+  messageId    String
+  type         CallType
+  duration     Int // secondes
+  status       CallStatus
+  message      Message           @relation("MessageCall", fields: [messageId], references: [id])
+  participants CallParticipant[] @relation("CallParticipants")
+  startedAt    DateTime          @default(now())
+  endedAt      DateTime?
+}
+
+enum CallType {
+  VOICE
+  VIDEO
+  GROUP_VOICE
+  GROUP_VIDEO
+}
+
+//table de jointure 
+model CallParticipant {
+  call     Call     @relation("CallParticipants", fields: [callId], references: [id])
+  callId   String
+  user     User     @relation("UserCalls", fields: [userId], references: [id])
+  userId   String
+  joinedAt DateTime @default(now())
+
+  @@id([callId, userId])
+  @@map("call_participants")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  content   String
+  isRead    Boolean          @default(false)
+  userId    String           @map("user_id")
+  habitId   String?          @map("habit_id")
+  postId    String?          @map("post_id")
+  commentId String?          @map("comment_id")
+  user      User             @relation("UserNotifications", fields: [userId], references: [id])
+  post      Post?            @relation("NotificationPost", fields: [postId], references: [id])
+  comment   PostComment?     @relation("NotificationComment", fields: [commentId], references: [id])
+  habit     Habit?           @relation("NotificationHabit", fields: [habitId], references: [id])
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  Mention
+  Like
+  Comment
+  Follow
+  HabitReminder
+}
+
+model TeamMember {
+  id              String      @id @default(uuid())
+  userId          String
+  teamId          String
+  role            String      @default("member")
+  tasksCompleted  Int         @default(0)
+  hoursLogged     Float       @default(0.0)
+  efficiencyScore Float       @default(0.0)
+  status          String      @default("ACTIVE")
+  milestones      Milestone[]
+  tasks           Task[]
+  team            Team        @relation("TeamMembers", fields: [teamId], references: [id])
+  user            User        @relation("TeamMembers", fields: [userId], references: [id])
+
+  @@unique([userId, teamId])
+  @@map("team_members")
+}
+
+model NFT {
+  id          String    @id @default(uuid())
   name        String
   description String?
   userId      String
-  user        User    @relation("UserProjects", fields: [userId], references: [id]) // Specify the same relation name
-  tasks       Task[]  @relation("ProjectTasks") // Add relation to Task model
+  projectId   String
+  tokenId     String    @unique
+  mintedAt    DateTime  @default(now())
+  status      NFTStatus @default(ACTIVE)
+  type        String
+  project     Project   @relation(fields: [projectId], references: [id])
+  user        User      @relation("NFT", fields: [userId], references: [id])
+
+  @@map("nfts")
+}
+
+model Project {
+  id                      String         @id @default(uuid())
+  name                    String
+  description             String?
+  userId                  String
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  tags                    String[]
+  teamId                  String?
+  aiInsights              Json?
+  completedAt             DateTime?
+  visionImpact            String?
+  estimatedCompletionDate DateTime?
+  mainGoal                String?
+  status                  String?
+  visibility              String?
+  timeline                String?
+  type                    String?
+  teamType                String         @default("solo")
+  File                    File[]
+  milestones              Milestone[]
+  Presentation            Presentation[]
+
+  nfts         NFT[]
+  team         Team?         @relation("TeamProjects", fields: [teamId], references: [id])
+  user         User          @relation("UserProjects", fields: [userId], references: [id])
+  TimeEntry    TimeEntry[]
+  achievements Achievement[] @relation("ProjectAchievements")
+  Client       Client?       @relation(fields: [clientId], references: [id])
+  clientId     String?
+  Invoice      Invoice[]
 
   @@map("projects")
 }
 
+model Milestone {
+  id                    String                  @id @default(uuid())
+  projectId             String
+  name                  String
+  description           String?
+  status                String?
+  startDate             DateTime?
+  dueDate               DateTime?
+  position              Int? // For custom ordering
+  visibleTo             String[]                @default([])
+  visibility            String                  @default("private")
+  completedAt           DateTime?
+  progress              Float                   @default(0.0)
+  priority              String                  @default("medium")
+  aiGenerated           Boolean                 @default(false)
+  estimatedTime         Int?
+  actualTime            Int?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  assignedBy            String?
+  assignedToId          String?
+  assignedByUser        User?                   @relation("AssignedByUser", fields: [assignedBy], references: [id])
+  assignedTo            TeamMember?             @relation(fields: [assignedToId], references: [id])
+  project               Project                 @relation(fields: [projectId], references: [id])
+  MilestoneAchievements MilestoneAchievements[]
+  tasks                 Task[]                  @relation("MilestoneTasks")
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  ownerId     String
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  projects    Project[]    @relation("TeamProjects")
+  tasks       Task[]
+  members     TeamMember[] @relation("TeamMembers")
+  TimeEntry   TimeEntry[]
+}
+
 model Task {
-  id             String   @id @default(uuid())
-  title          String
-  description    String?
-  status         String   @default("pending") // Default status
+  id               String           @id @default(uuid())
+  name             String
+  description      String?
+  dueDate          DateTime?
+  completedAt      DateTime?
+  assignedBy       String?
+  estimatedTime    Float?
+  actualTime       Float?
+  dependencyStatus String?
+  teamId           String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  milestoneId      String
+  status           String?
+  position         Int?
+  priority         String?
+  assignedToId     String?
+  progress         Float            @default(0.0)
+  startDate        DateTime?
+  TaskComment      TaskComment[]
+  TaskDependency   TaskDependency[]
+  assignedByUser   User?            @relation("AssignedByUser", fields: [assignedBy], references: [id])
+  assignedTo       TeamMember?      @relation(fields: [assignedToId], references: [id])
+  milestone        Milestone        @relation("MilestoneTasks", fields: [milestoneId], references: [id])
+  team             Team?            @relation(fields: [teamId], references: [id])
+  TimeEntry        TimeEntry[]
+  achievements     Achievement[]    @relation("TaskAchievements")
+  Course           Course?          @relation(fields: [courseId], references: [id])
+  courseId         String?
+
+  @@map("tasks")
+}
+
+model TaskDependency {
+  id        String @id @default(uuid())
+  taskId    String
+  dependsOn String
+  task      Task   @relation(fields: [taskId], references: [id])
+
+  @@unique([taskId, dependsOn])
+}
+
+model TaskComment {
+  id        String   @id @default(uuid())
+  taskId    String
+  userId    String
+  comment   String
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model TimeEntry {
+  id                  String    @id @default(uuid())
+  userId              String
+  projectId           String?
+  taskId              String?
+  teamId              String?
+  startTime           DateTime?
+  endTime             DateTime?
+  duration            Float?
+  breakDuration       Float?
+  billable            Boolean?
+  manualEntry         Boolean?
+  notes               String?
+  timeEfficiency      Float?
+  focusScore          Float?
+  timeDeviation       Float?
+  overworked          Boolean?
+  productivityTip     String?
+  timeAdjustment      Float?
+  distractionBlocking Boolean?
+  blockedApps         Json?
+  environmentSettings Json?
+  workPatternAnalysis Json?
+  freePackageLimit    Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  status              String?
+  project             Project?  @relation(fields: [projectId], references: [id])
+  task                Task?     @relation(fields: [taskId], references: [id])
+  team                Team?     @relation(fields: [teamId], references: [id])
+  user                User      @relation("UserTimeEntries", fields: [userId], references: [id])
+
+  @@map("time_entries")
+}
+
+model Profile {
+  id                 String               @id @default(uuid())
+  userId             String
+  platform           String
+  username           String
+  bio                String?
+  profilePic         String?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  accessToken        String?
+  ContentPerformance ContentPerformance[]
+  CreatorGoal        CreatorGoal[]
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ScheduledPost      ScheduledPost[]
+  SocialStats        SocialStats[]
+
+  @@unique([userId, platform], name: "userId_platform")
+}
+
+model SocialStats {
+  id                String   @id @default(uuid())
+  profileId         String
+  followers         Int
+  likes             Int?
+  comments          Int?
+  date              DateTime @default(now())
+  platform          String?
+  commentGrowth     Int?
+  followerGrowth    Int?
+  likeGrowth        Int?
+  shareGrowth       Int?
+  estimatedAgeGroup String?
+  estimatedGender   String?
+  estimatedCountry  String?
+  posts             Int?
+  profile           Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, date], name: "daily_stats")
+  @@index([date])
+}
+
+model ContentPerformance {
+  id           String   @id @default(uuid())
+  profileId    String
+  postId       String   @unique
+  mediaType    String
+  caption      String?
+  likeCount    Int?
+  commentCount Int?
+  shareCount   Int?
+  mediaUrl     String?
+  timestamp    DateTime
+  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model CreatorGoal {
+  id           String    @id @default(uuid())
+  targetValue  Float
+  currentValue Float     @default(0)
+  deadline     DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  description  String
+  goalId       String
+  metrics      String[]
+  progress     Float     @default(0)
+  title        String
+  profileId    String
+  creatorType  String
+  platform     String
+  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+model Group {
+  id        String            @id @default(uuid())
+  name      String
+  creatorId String
+  createdAt DateTime          @default(now())
+  deletedAt DateTime?
+  members   GroupMembership[] @relation("GroupMembers")
+  creator   User              @relation("UserGroups", fields: [creatorId], references: [id])
+
+  @@map("groups")
+}
+
+model GroupMembership {
+  id       String           @id @default(uuid())
+  userId   String
+  groupId  String
+  status   MembershipStatus @default(PENDING)
+  joinedAt DateTime         @default(now())
+  leftAt   DateTime?
+  group    Group            @relation("GroupMembers", fields: [groupId], references: [id])
+  user     User             @relation("UserGroupMemberships", fields: [userId], references: [id])
+
+  @@unique([userId, groupId])
+  @@map("group_memberships")
+}
+
+model Challenge {
+  id              String                 @id @default(uuid())
+  name            String
+  description     String?
+  creatorId       String
+  startDate       DateTime
+  endDate         DateTime
+  status          String                 @default("upcoming")
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  visibility      String                 @default("public")
+  maxParticipants Int?
+  type            String                 @default("individual")
+  Achievement     Achievement[]
+  participants    ChallengeParticipant[]
+  creator         User                   @relation(fields: [creatorId], references: [id])
+  Leaderboard     Leaderboard[]
+  rewards         Token[]
+
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  id                  String        @id @default(uuid())
+  userId              String
+  challengeId         String
+  progress            Json?
+  leaderboardPosition Int?
+  totalScore          Float?
+  tokensEarned        Float?
+  createdAt           DateTime      @default(now())
+  status              String        @default("active")
+  completedAt         DateTime?
+  achievements        Achievement[]
+  challenge           Challenge     @relation(fields: [challengeId], references: [id])
+  user                User          @relation(fields: [userId], references: [id])
+  Leaderboard         Leaderboard[]
+
+  @@unique([userId, challengeId])
+  @@map("challenge_participants")
+}
+
+model Leaderboard {
+  id             String               @id @default(uuid())
+  challengeId    String
+  participantId  String
+  rank           Int
+  score          Float
+  updatedAt      DateTime             @updatedAt
+  season         String?
+  isFinalized    Boolean              @default(false)
+  tokensRewarded Float
+  challenge      Challenge            @relation(fields: [challengeId], references: [id])
+  participant    ChallengeParticipant @relation(fields: [participantId], references: [id])
+
+  @@map("leaderboards")
+}
+
+model Achievement {
+  id                     String                  @id @default(uuid())
+  name                   String
+  description            String?
+  challengeId            String?
+  type                   String
+  points                 Float
+  rewardTokens           Float?
+  createdAt              DateTime                @default(now())
+  challengeParticipantId String?
+  icon                   String?
+  isHidden               Boolean                 @default(false)
+  AchievementProgress    AchievementProgress[]
+  MilestoneAchievements  MilestoneAchievements[]
+  challenge              Challenge?              @relation(fields: [challengeId], references: [id])
+  ChallengeParticipant   ChallengeParticipant?   @relation(fields: [challengeParticipantId], references: [id])
+  projects               Project[]               @relation("ProjectAchievements")
+  tasks                  Task[]                  @relation("TaskAchievements")
+  users                  User[]                  @relation("UserAchievements")
+
+  @@map("achievements")
+}
+
+model AchievementProgress {
+  id            String      @id @default(uuid())
+  userId        String
+  achievementId String
+  progress      Int         @default(0)
+  goal          Int
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model Token {
+  id             String     @id @default(uuid())
   userId         String
-  projectId      String
-  estimatedHours Float? // Optional field for estimated hours
+  amount         Float
+  earnedAt       DateTime   @default(now())
+  reason         String
+  expirationDate DateTime?
+  source         String
+  challengeId    String?
+  Challenge      Challenge? @relation(fields: [challengeId], references: [id])
+  user           User       @relation(fields: [userId], references: [id])
+
+  @@map("tokens")
+}
+
+model Formation {
+  id              String        @id @default(uuid())
+  name            String
+  description     String
+  level           String
+  categoryId      String
+  startDate       DateTime
+  endDate         DateTime
+  location        String
+  maxParticipants Int
+  price           Float
+  status          String        @default("active")
+  createdBy       String
+  category        Category      @relation(fields: [categoryId], references: [id])
+  reviews         Review[]
+  participants    Transaction[]
+  formateurs      Formateur[]   @relation("FormateurToFormation")
+
+  @@map("formations")
+}
+
+model Review {
+  id             String        @id @default(uuid())
+  userId         String
+  formationId    String
+  rating         Int
+  comment        String?
+  createdAt      DateTime      @default(now())
+  freelancerId   String?
+  serviceId      String?
+  digitalAssetId String?
+  DigitalAsset   DigitalAsset? @relation(fields: [digitalAssetId], references: [id])
+  formation      Formation     @relation(fields: [formationId], references: [id])
+  Freelancer     Freelancer?   @relation(fields: [freelancerId], references: [id])
+  Service        Service?      @relation(fields: [serviceId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
+
+  @@map("reviews")
+}
+
+model Transaction {
+  id          String    @id @default(uuid())
+  userId      String
+  formationId String
+  amount      Float
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
+  formation   Formation @relation(fields: [formationId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("transactions")
+}
+
+model Category {
+  id         String      @id @default(uuid())
+  name       String
+  formations Formation[]
+
+  @@map("categories")
+}
+
+model Formateur {
+  id         String      @id @default(uuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id])
+  formations Formation[] @relation("FormateurToFormation")
+
+  @@map("formateurs")
+}
+
+model Freelancer {
+  id           String    @id @default(uuid())
+  userId       String
+  skills       Json
+  hourlyRate   Float?
+  availability String    @default("available")
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id])
+  reviews      Review[]
+  services     Service[]
+
+  @@map("freelancers")
+}
+
+model Service {
+  id           String     @id @default(uuid())
+  freelancerId String
+  name         String
+  description  String
+  price        Float
+  status       String     @default("active")
+  createdAt    DateTime   @default(now())
+  reviews      Review[]
+  freelancer   Freelancer @relation(fields: [freelancerId], references: [id])
+
+  @@map("services")
+}
+
+model DigitalAsset {
+  id          String   @id @default(uuid())
+  sellerId    String
+  name        String
+  description String
+  price       Float
+  fileUrl     String
+  category    String
+  soldCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  seller      User     @relation(fields: [sellerId], references: [id])
+  reviews     Review[]
+
+  @@map("digital_assets")
+}
+
+model File {
+  id             String           @id @default(uuid())
+  name           String
+  url            String
+  type           String
+  size           Int
+  projectId      String?
+  uploadedBy     String
+  createdAt      DateTime         @default(now())
+  taskId         String?
+  assignedUsers  AssignedUser[]
+  Project        Project?         @relation(fields: [projectId], references: [id])
+  AcadTask       AcadTask?        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user           User             @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  TaskSubmission TaskSubmission[]
+}
+
+model AssignedUser {
+  id         String   @id @default(uuid())
+  fileId     String
+  userId     String
+  assignedAt DateTime @default(now())
+  file       File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, userId])
+}
+
+model Citation {
+  id        String    @id @default(uuid())
+  title     String
+  year      String
+  journal   String
+  doi       String?
+  citedIn   String[]
+  tags      String[]
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  authors   String[]
+  taskId    String?
+  AcadTask  AcadTask? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Presentation {
+  id            String     @id @default(cuid())
+  title         String
+  description   String?
+  fullName      String
+  sourceType    SourceType @default(BLANK)
+  fileUrl       String?
+  titleFont     String
+  textFont      String
+  titleFontSize Int
+  textFontSize  Int
+  titleColor    String
+  textColor     String
+  totalSlides   Int
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  userId        String
+  projectId     String?
+  theme         Theme      @default(modern)
+  chapters      Chapter[]
+  project       Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id])
+  slides        Slide[]
+}
+
+model Slide {
+  id             String       @id @default(cuid())
+  presentationId String
+  title          String?
+  content        String?
+  order          Int
+  presentation   Presentation @relation(fields: [presentationId], references: [id])
+}
+
+model Chapter {
+  id             String       @id @default(cuid())
+  presentationId String
+  title          String
+  numberOfSlides Int
+  presentation   Presentation @relation(fields: [presentationId], references: [id])
+}
+
+model AcademicTask {
+  id           String          @id @default(uuid())
+  title        String
+  deadline     DateTime?
+  priority     Priority        @default(MEDIUM)
+  status       Status          @default(NOT_STARTED)
+  notes        String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  assigneeId   String?
+  assignedById String
+  projectId    String
+  assignedBy   User            @relation("AssignedTasks", fields: [assignedById], references: [id])
+  assignee     User?           @relation("AssigneeTasks", fields: [assigneeId], references: [id])
+  project      AcademicProject @relation(fields: [projectId], references: [id])
+}
+
+model AcademicProject {
+  id           String         @id @default(uuid())
+  userId       String
+  name         String
+  vibe         String
+  purpose      String
+  vision       String
+  firstMove    String
+  theme        String
+  frequency    String
+  spirit       String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  user         User           @relation(fields: [userId], references: [id])
+  AcademicTask AcademicTask[]
+}
+
+model Course {
+  id           String         @id @default(uuid())
+  title        String
+  description  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  createdById  String
+  visibility   String?
+  coverImage   String?
+  rating       Int            @default(0)
+  AcadTask     AcadTask[]
+  createdBy    User           @relation(fields: [createdById], references: [id])
+  CourseMember CourseMember[]
+  tags         CourseTag[]
+  rooms        Room[]
+  tasks        Task[]
+}
+
+model CourseTag {
+  id       String @id @default(uuid())
+  name     String
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+}
+
+model Room {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  visibility  String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdById String
+  courseId    String?
+  type        String?
+  status      Boolean?     @default(false)
+  course      Course?      @relation(fields: [courseId], references: [id])
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  members     RoomMember[]
+}
+
+model RoomMember {
+  id       String   @id @default(uuid())
+  roomId   String
+  userId   String
+  joinedAt DateTime @default(now())
+  role     String?
+  room     Room     @relation(fields: [roomId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+}
+
+model AcadTask {
+  id          String           @id @default(uuid())
+  title       String
+  description String?
+  deadline    DateTime
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdById String
+  courseId    String?
+  isClosed    Boolean          @default(false)
+  tags        String[]
+  maxPoints   Int?
+  course      Course?          @relation(fields: [courseId], references: [id])
+  createdBy   User             @relation(fields: [createdById], references: [id])
+  Citation    Citation[]
+  File        File[]
+  submissions TaskSubmission[]
+}
+
+model TaskSubmission {
+  id          String   @id @default(uuid())
+  submittedAt DateTime @default(now())
+  taskId      String
+  studentId   String
+  fileId      String
+  grade       Float?
+  feedback    String?
+  points      Int?
+  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  student     User     @relation(fields: [studentId], references: [id])
+  task        AcadTask @relation(fields: [taskId], references: [id])
+}
+
+model CourseMember {
+  id       String   @id @default(uuid())
+  courseId String
+  userId   String
+  role     String?
+  joinedAt DateTime @default(now())
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ScheduledPost {
+  id          String    @id @default(uuid())
+  mediaUrl    String?
+  scheduledAt DateTime
+  publishedAt DateTime?
+  status      String    @default("PENDING")
+  platform    String
+  profileId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  caption     String
+  hashtags    String?
+  mediaType   String?
+  uploadedBy  String
+  profile     Profile   @relation(fields: [profileId], references: [id])
+  user        User      @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+}
+
+model DailyStats {
+  id             String   @id @default(uuid())
+  profileId      String
+  followers      Int
+  likes          Int
+  comments       Int
+  followerGrowth Int
+  likeGrowth     Int
+  commentGrowth  Int
+  date           DateTime @default(now())
+
+  @@unique([profileId, date], name: "daily_entry")
+  @@map("daily_stats")
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  name      String
+  price     Float
+  icon      String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  sales     Sale[]
+  Profit    Profit[]
+}
+
+model Sale {
+  id        String   @id @default(cuid())
+  productId String
+  quantity  Int
+  date      DateTime
+  createdAt DateTime @default(now())
+  userId    String
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Expense {
+  id         String    @id @default(cuid())
+  title      String
+  amount     Float
+  type       String
+  repeat     Boolean?  @default(false)
+  repeatType String?
+  startDate  DateTime?
+  endDate    DateTime?
+  date       DateTime
+  userId     String
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model DailyProfit {
+  id         String   @id @default(uuid())
+  userId     String
+  date       DateTime @unique
+  day        String?
+  revenue    Float // from sales
+  expenses   Float // from expenses
+  timeWorked Float?
+  profit     Float // revenue - expenses
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model MilestoneAchievements {
+  A            String
+  B            String
+  achievements Achievement @relation(fields: [A], references: [id], onDelete: Cascade)
+  Milestone    Milestone   @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_MilestoneAchievements_AB_pkey")
+  @@index([B], map: "_MilestoneAchievements_B_index")
+  @@map("_MilestoneAchievements")
+}
+
+enum ProjectType {
+  BUSINESS
+  CREATIVE
+  SOCIAL_IMPACT
+  PERSONAL
+  OTHER
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+}
+
+enum CreatorType {
+  CONTENT
+  INFLUENCER
+  ECOMMERCE
+  EDUCATOR
+  ARTIST
+  NEWS
+}
+
+enum Platform {
+  YOUTUBE
+  INSTAGRAM
+  TIKTOK
+  FACEBOOK
+}
+
+enum ProjectStatus {
+  IDEA
+  PLANNING
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+  ACTIVE
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum PackageType {
+  SILVER
+  GOLD
+  DIAMOND
+}
+
+enum RevenueModel {
+  SUBSCRIPTION
+  ONE_TIME_SALES
+  ADS
+  DONATIONS
+  OTHER
+}
+
+enum BudgetRange {
+  LOW_1K_5K
+  MID_5K_10K
+  HIGH_10K_PLUS
+  Im_not_sure_yet
+}
+
+enum Timeline {
+  SHORT_0_3_MONTHS
+  MEDIUM_3_12_MONTHS
+  LONG_1_PLUS_YEARS
+}
+
+enum FundingSource {
+  BOOTSTRAPPED
+  INVESTOR_BACKED
+  CROWDFUNDED
+  OTHER
+}
+
+enum StrategyModel {
+  LEAN_STARTUP
+  AGILE_SPRINT
+  MVP_FOCUS
+  CUSTOM_PLAN
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskType {
+  FEATURE
+  BUG
+  MILESTONE
+  TASK
+}
+
+enum NFTStatus {
+  ACTIVE
+  SOLD
+  BURNED
+  TRANSFERRED
+}
+
+enum CommunityRole {
+  MEMBER
+  MODERATOR
+  ADMIN
+}
+
+enum PostVisibility {
+  PUBLIC
+  PRIVATE
+  MEMBERS_ONLY
+}
+
+enum TimeEntryStatus {
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+enum PostType {
+  TEXT
+  IMAGE
+  LINK
+  POLL
+}
+
+enum MembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SourceType {
+  BLANK
+  POWERPOINT
+  GOOGLE_SLIDES
+}
+
+enum Theme {
+  modern
+  elegant
+  fun
+  minimal
+  tech
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Status {
+  NOT_STARTED
+  IN_PROGRESS
+  AT_RISK
+  COMPLETED
+}
+
+model UserLocation {
+  id          String @id @default(cuid())
+  userId      String @unique
+  city        String
+  country     String
+  latitude    Float
+  longitude   Float
+  range       Int?
+  BudgetRange Int?
+
+  user          User           @relation(fields: [userId], references: [id])
+  BusinessPlans BusinessPlan[] // change from singular to plural
+}
+
+model Place {
+  id         Int     @id @default(autoincrement())
+  name       String
+  address    String
+  street     String?
+  city       String
+  country    String
+  latitude   Float
+  longitude  Float
+  userId     String
+  categoryId Int
+
+  user     User          @relation(fields: [userId], references: [id])
+  category CategoryPlace @relation(fields: [categoryId], references: [id])
+  details  PlaceDetail?
+}
+
+model PlaceDetail {
+  id       Int     @id @default(autoincrement())
+  placeId  Int     @unique
+  place    Place   @relation(fields: [placeId], references: [id])
+  operator String?
+  brand    String?
+  stars    Int?
+  phone    String?
+  email    String?
+}
+
+model CategoryPlace {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  places Place[]
+}
+
+model BusinessPlan {
+  id             String   @id @default(cuid())
+  userId         String
+  title          String // “Tunisian Handicraft Boutique”
+  description    String // One‑sentence pitch
+  whyItFits      String // Reason it matches the city/budget
+  bonusTip       String // Extra success advice
+  difficulty     String // “Easy” | “Medium” | “Hard”
+  timeToProfit   String // “6‑9 months”
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  user           User     @relation("UserTasks", fields: [userId], references: [id]) // Specify the relation name
-  project        Project  @relation("ProjectTasks", fields: [projectId], references: [id]) // Specify the relation name
+  UserLocationId String
+
+  status String?
+
+  estimatedCost Int?
+  UserLocation  UserLocation @relation(fields: [UserLocationId], references: [id])
+
+  user        User          @relation(fields: [userId], references: [id])
+  AiPlan      AiPlan[]
+  StartupPlan StartupPlan[]
+}
+
+model AiJob {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  url                       String   @unique
+  title                     String
+  companyName               String
+  companyLogo               String?
+  category                  String?
+  tags                      String[] // Prisma supports string arrays with PostgreSQL
+  jobType                   String?
+  publicationDate           DateTime
+  candidateRequiredLocation String?
+  salary                    String?
+  description               String?
+  chosed                    Boolean  @default(false)
+  status                    String?
+
+  createdAt DateTime @default(now())
+}
+
+model BusinessSuggestion {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title        String
+  description  String
+  whyItFits    String
+  bonusTip     String
+  difficulty   String
+  timeToProfit String
+
+  city            String
+  country         String
+  estimatedBudget Float
+
+  createdAt DateTime @default(now())
+}
+
+model AiPlan {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId         String // The business-idea ID this plan belongs to
+  budget        Json // Section 2: Smart Budget Strategy
+  launchPlan    Json // Section 3: 30-Day Launch Calendar
+  risks         Json // Section 4: Main Risks and How to Avoid Them
+  bonusTip      String // Section 5: Bonus Tip
+  minimumBudget String? // Section 6: Minimum Budget Estimation
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  aiJob BusinessPlan @relation(fields: [jobId], references: [id])
+}
+
+model StartupPlan {
+  id         String   @id @default(cuid())
+  userId     String
+  title      String // e.g., "Akouda Beach Cafe"
+  budget     Float // e.g., 300
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  jobId      String? // Optional field for BusinessPlan relation
+  BusinessId String? // Optional field for LocalUserBusinessplan relation
+
+  budgetItems   BudgetItem[]
+  tips          Tip[]
+  risks         Risk[]
+  calendarWeeks CalendarWeek[]
+
+  user           User                   @relation(fields: [userId], references: [id])
+  aiJob          BusinessPlan?          @relation(fields: [jobId], references: [id])
+  BusinessplanId LocalUserBusinessplan? @relation(fields: [BusinessId], references: [id])
+  AiPlanTask     AiPlanTask[]
+  UserExpense    UserExpense[]
+}
+
+model AiPlanTask {
+  id            String    @id @default(cuid())
+  startupPlanId String
+  dayNumber     String? // e.g., 1–30
+  title         String // e.g., "Market Research"
+  description   String
+  completed     Boolean   @default(false)
+  plannedDate   DateTime? // Optional, for scheduling task calendar view
+
+  startupPlan StartupPlan   @relation(fields: [startupPlanId], references: [id])
+  UserExpense UserExpense[]
+}
+
+model BudgetItem {
+  id            String  @id @default(cuid())
+  startupPlanId String
+  name          String // e.g., "Tables", "Legal Fees"
+  suggestedCost Float
+  actualCost    Float? // User-entered
+  notes         String? // Optional user comments
+
+  startupPlan StartupPlan @relation(fields: [startupPlanId], references: [id])
+}
+
+model UserExpense {
+  id            String   @id @default(cuid())
+  startupPlanId String
+  taskId        String? // Optional: link to a task if tied
+  title         String // e.g., "Bought chairs"
+  amount        Float
+  date          DateTime
+  notes         String?
+
+  startupPlan StartupPlan @relation(fields: [startupPlanId], references: [id])
+  AItask      AiPlanTask? @relation(fields: [taskId], references: [id])
+}
+
+model Tip {
+  id            String @id @default(cuid())
+  startupPlanId String
+  content       String
+
+  startupPlan StartupPlan @relation(fields: [startupPlanId], references: [id])
+}
+
+model Risk {
+  id            String @id @default(cuid())
+  startupPlanId String
+  risk          String // e.g., "Insufficient Revenue"
+  mitigation    String // e.g., "Offer promotions..."
+
+  startupPlan StartupPlan @relation(fields: [startupPlanId], references: [id])
+}
+
+model CalendarWeek {
+  id            String @id @default(cuid())
+  startupPlanId String
+  weekNumber    Int // 1 to 4
+  summary       String // e.g., "Week 1: Market Research & Business Plan"
+
+  startupPlan StartupPlan @relation(fields: [startupPlanId], references: [id])
+}
+
+model LocalBusiness {
+  id String @id @default(cuid())
+
+  projectName String?
+  userId      String
+
+  projectType String?
+  location    String?
+  discription String?
+  startHour   Int?
+  endHour     Int?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model LocalUserBusinessplan {
+  id String @id @default(cuid())
+
+  projectName String?
+  userId      String
+
+  projectType String?
+  city        String?
+  country     String?
+  description String?
+  BudgetRange Int?
+  user        User          @relation(fields: [userId], references: [id])
+  StartupPlan StartupPlan[]
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  photo     String? // Optional URL to client's photo
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId String?
+  user   User?   @relation("ClientUser", fields: [userId], references: [id])
+
+  // Created by a user (required)
+  createdBy String?
+  creator   User?   @relation("ClientCreator", fields: [createdBy], references: [id])
+
+  projects Project[] // Optional one-to-many relation (0 or more projects)
+  Invoice  Invoice[]
+}
+
+model Invoice {
+  id        String   @id @default(cuid())
+  status    String
+  dueDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  createdBy String?
+  creator   User?   @relation("ClientCreator", fields: [createdBy], references: [id])
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  items  InvoiceItem[] // Related items
+  Profit Profit[]
+}
+
+model InvoiceItem {
+  id          String @id @default(cuid())
+  description String
+  amount      Float
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model Profit {
+  id        String   @id @default(uuid())
+  amount    Float
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  invoiceId String?
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id])
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
 }
